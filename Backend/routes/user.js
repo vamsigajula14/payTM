@@ -3,6 +3,8 @@ const zod = require('zod');
 const {User} = require('../db');
 const jwt = require('jsonwebtoken');
 const {JWT_SECRET} = require('../config');
+const {authMiddleware} = require('../middleware');
+const { default: mongoose } = require('mongoose');
 
 const userRouter = express.Router();
 const signUpSchema = zod.object({
@@ -63,6 +65,23 @@ userRouter.post('/signin',(req,res)=>{
     res.status(200).json({
         message : "Login successful",
         token : token
+    })
+})
+const updateSchema = zod.object({
+    password : zod.string().optional(),
+    firstname : zod.string().optional(),
+    lastname : zod.string().optional()
+})
+userRouter.put('/',authMiddleware,async (req,res)=>{
+    const success = updateSchema.safeParse(req.body);
+    if(!success){
+        return res.status(411).json({
+            message : "invalid input"
+        })
+    }
+    await User.findOneAndUpdate({_id : req.userId},req.body)
+    res.status(200).json({
+        message : "Updated successfuly"
     })
 })
 
